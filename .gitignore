@@ -1,0 +1,4 @@
+.env
+/app.egg-info
+/build
+*.rds
