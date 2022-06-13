@@ -1,27 +1,57 @@
 from app import cell, gene
+from sqlalchemy.orm.session import Session
+from typing import Any
 
 
-def import_genes_handeler(session, gene_data, filter_columns):
+def import_genes_handeler(
+        session: Session, 
+        gene_data, 
+        filter_columns: list[str],
+        filter_data: dict[str, str] = None):
     '''
-    Populate the `gene` table with a dict from api call
-    accepts a gene_data: Dict{"gene":List[Dict{"cell": String, "expression": Int}]}
-    benchmark: 16,034 non-0 gene expressions accross 2 genes in 11.1 sec
-    - 300,000,000 genes 57 hours
+    Populate the `gene` table with a dict from api call.
+
+    Accepts gene_data as type dict["<gene>", list[dict["cell": "<cell_id>",
+        "expression": <expression number>]]]
+    The filter_columns param is a list[str] that contains all columns that
+    will be used for filtering gene expressions.
+
+    Optionally: you may provide filter_data to manually provide the data for
+    the filter_columns. This will speed up the import because it skips querying
+    the values from the cell table. This should be used if all cells in the
+    import have the same data for their filter_columns. This variable should be
+    formatted with {"column_name":"value"}. When this variable is provided,
+    filter_columns will be disregarded.
+
+    benchmark for None filter_data: 
+    16,034 non-0 gene expressions accross 2 genes in 11.1 sec
+    - 300,000,000 entries in 57 hours
+    67,487 entries in 45.5 sec
+    - 300,000,000 entries in 56 hours  
+
+    benchmark with filter_data:
+    293,240 entries in 1.09 sec
+    - 300,000,000 entries in 18 min (yay!)  
     '''
     for gene_label, cell_expressions in gene_data.items():
 
         genes = {}
 
+        filter_group = filter_data
+
         for item in cell_expressions:
             expression_dict = {item['cell']: item['expression']}
 
-            # cell's metadata for each filter specifcied by user
-            c = session.query(cell).filter_by(id=item["cell"]).first()
-            if c is None:
-                print(f'{item["cell"]} could not be found in table `cell`')
-                continue
-            filter_group = {col: getattr(c, col) for col in filter_columns}
-            filter_group_key = "".join(filter_group.values())
+            if filter_data is None:
+                # cell's metadata for each filter_column specifcied by user
+                c = session.query(cell).filter_by(id=item["cell"]).first()
+                if c is None:
+                    print(f'{item["cell"]} could not be found in table `cell`')
+                    continue
+                filter_group = {col: getattr(c, col) for col in filter_columns}
+                filter_group_key = "".join(filter_group.values())
+            else:
+                filter_group_key = "".join(filter_group.values())
 
             if filter_group_key not in genes:
                 g = gene(gene=gene_label, data=[

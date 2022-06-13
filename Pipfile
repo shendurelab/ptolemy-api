@@ -12,6 +12,7 @@ flask-cors = "*"
 werkzeug = "*"
 gunicorn = "*"
 psycopg2-binary = "*"
+dataclasses-json = "*"
 
 [dev-packages]
 autopep8 = "*"

@@ -8,10 +8,10 @@ dropdb:
 	docker exec -it postgres-ptolemy dropdb ptolemy
 
 server:
-	pipenv run flask run
+	pipenv run gunicorn -w 4 app:app
 
 migrateup:
 	pipenv run flask db migrate && pipenv run flask db upgrade
 
--PHONY: postgres, createdb, dropdb
+-PHONY: postgres, createdb, dropdb, server, migrateup
 
