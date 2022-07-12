@@ -15,10 +15,11 @@ app.config[
 app.secret_key = os.environ['SECRET_KEY']
 
 # fmt: off
-from app.model import get_cell, get_gene
+from app.model import get_cell, get_gene_filtered, get_gene_unfiltered
 db = SQLAlchemy(app)
 cell = get_cell(db.Model)
-gene = get_gene(db.Model)
+gene_unfiltered = get_gene_unfiltered(db.Model)
+gene_filtered = get_gene_filtered(db.Model)
 migrate = Migrate(app, db)
 from app import routes, schema
 # fmt: on

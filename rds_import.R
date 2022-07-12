@@ -23,13 +23,13 @@ cat("Thread", current_thread, "read rds file\n")
 
 chunk_size <- 5
 rows <- 40 #nrow(mat)
-chunk_data <- list()
 
 start <- floor(rows * ((current_thread - 1) / threads)) + 1
 end <- floor(rows * (current_thread / threads))
 total_data_size <- 0
 
 for (i in seq(start, end, chunk_size)) {
+	chunk_data <- list()
 	seq_size <- chunk_size
 	data_size <- 0
 	if ((i + seq_size) > end) seq_size <- end - i + 1
@@ -37,6 +37,7 @@ for (i in seq(start, end, chunk_size)) {
 	cat("Thread",current_thread,": building request data\n")
 	for (j in seq(1, seq_size)) {
 		row <- j + i - 1
+
 		temp_df <- as.data.frame(as.matrix(mat[row,]))
 		colnames(temp_df) <- c("expression")
 		temp_df$cell <- rownames(temp_df)
@@ -54,7 +55,7 @@ for (i in seq(start, end, chunk_size)) {
 
 	api.start.time <- proc.time()[[3]]
 
-	POST("localhost:8000/genes", body = body, encode = "json")
+	POST("localhost:8080/genes", body = body, encode = "json")
 
 	api.end.time <- proc.time()[[3]]
 	api.time.taken <- api.end.time - api.start.time

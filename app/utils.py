@@ -1,13 +1,12 @@
-from app import cell, gene
+from app import cell, gene_filtered, gene_unfiltered
 from sqlalchemy.orm.session import Session
-from typing import Any
 
 
 def import_genes_handeler(
         session: Session, 
         gene_data, 
-        filter_columns: list[str],
-        filter_data: dict[str, str] = None):
+        filter_columns: list[str] = [],
+        filter_data: dict[str, str] = {}):
     '''
     Populate the `gene` table with a dict from api call.
 
@@ -35,14 +34,17 @@ def import_genes_handeler(
     '''
     for gene_label, cell_expressions in gene_data.items():
 
-        genes = {}
+        # dict of gene objects to upload to the db. key is concatination of
+        # filter values for quick check if exists and access
+        gene_rows = {}
 
         filter_group = filter_data
+        filter_group_key = "".join(filter_group.values()) if filter_data else "a"
 
         for item in cell_expressions:
             expression_dict = {item['cell']: item['expression']}
 
-            if filter_data is None:
+            if filter_columns and not filter_data:
                 # cell's metadata for each filter_column specifcied by user
                 c = session.query(cell).filter_by(id=item["cell"]).first()
                 if c is None:
@@ -50,17 +52,19 @@ def import_genes_handeler(
                     continue
                 filter_group = {col: getattr(c, col) for col in filter_columns}
                 filter_group_key = "".join(filter_group.values())
-            else:
-                filter_group_key = "".join(filter_group.values())
 
-            if filter_group_key not in genes:
-                g = gene(gene=gene_label, data=[
-                         expression_dict], **filter_group)
-                genes[filter_group_key] = g
+            if filter_group_key not in gene_rows:
+                if not filter_columns and not filter_data:
+                    g = gene_unfiltered(gene=gene_label, data=[
+                             expression_dict])
+                else:
+                    g = gene_filtered(gene=gene_label, data=[
+                             expression_dict], **filter_group)
+                gene_rows[filter_group_key] = g
             else:
-                genes[filter_group_key].data.append(expression_dict)
+                gene_rows[filter_group_key].data.append(expression_dict)
 
-        session.bulk_save_objects(genes.values())
+        session.bulk_save_objects(gene_rows.values())
     session.commit()
 
 
