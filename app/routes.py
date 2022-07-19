@@ -131,8 +131,10 @@ def get_cell():
     order by
       {params['annotation']}
     """
-
-    data = db.session.execute(sqlalchemy.text(stmt), params)
+    try:
+        data = db.session.execute(sqlalchemy.text(stmt), params)
+    except:
+        data = {}
     response = [[c for c in data.keys()]]
     response.extend([[i for i in row] for row in data])
     t2 = timer()

@@ -11,7 +11,7 @@ server:
 	pipenv run gunicorn -w 4 -b 127.0.0.1:5000 -t 3000 app:app
 
 migrateup:
-	pipenv run flask db migrate && pipenv run flask db upgrade
+	pipenv run flask db upgrade
 
 -PHONY: postgres, createdb, dropdb, server, migrateup
 
