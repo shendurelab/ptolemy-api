@@ -16,6 +16,7 @@ start.time <- proc.time()[[3]]
 args = commandArgs(trailingOnly=TRUE)
 threads = as.integer(args[2])
 current_thread = as.integer(args[3])
+timepoint = args[4]
 
 cat("Thread", current_thread, "importing",args[1],"\n")
 mat <- readRDS(args[1])
@@ -50,12 +51,13 @@ for (i in seq(start, end, chunk_size)) {
 		data_size <- data_size + length(gene_data)
 	}
 	total_data_size <- total_data_size + data_size
-	# TODO: add filter_column and filter_data arguments to request body
-	body <- list(data=chunk_data)
+
+	# Setting timepoint value for all data
+	body <- list(data=chunk_data, filter_data=list(timepoint=timepoint))
 
 	api.start.time <- proc.time()[[3]]
 
-	POST("localhost:8080/genes", body = body, encode = "json")
+	POST("localhost:5000/genes", body = body, encode = "json")
 
 	api.end.time <- proc.time()[[3]]
 	api.time.taken <- api.end.time - api.start.time

@@ -1,8 +1,9 @@
 #!/bin/bash
 
-threads=4
+threads=$2
 
 for ((i=1; i<=threads; i++))
 do
-	./rds_import.R JAX_E9_count.rds $threads $i &
+	./rds_import.R $1 $threads $i $3 &
 done
+

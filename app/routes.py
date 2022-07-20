@@ -9,10 +9,11 @@ from timeit import default_timer as timer
 def genes():
     t1 = timer()
     # TODO: dynamically assign from user input
-    filter_columns = ["timepoint", "celltype"]
-    filter_data = {}#{"timepoint":"E9"}
+    filter_columns = ["timepoint"]
     data = request.get_json()
-    import_genes_handeler(db.session, data["data"], filter_columns, filter_data)
+    filter_data = data['filter_data']
+    import_genes_handeler(
+        db.session, data["data"], filter_columns, filter_data)
     t2 = timer()
     total_time = t2-t1
     print(total_time)
@@ -21,9 +22,8 @@ def genes():
 
 @app.post('/cells')
 def cells():
-    # TODO: dynamically assign from user input
     t1 = timer()
-    filter_columns = ["timepoint"]
+    # TODO: dynamically assign from user input
     data = request.get_json()
     import_cells_handeler(db.session, data)
     t2 = timer()
@@ -67,7 +67,8 @@ def gene_unfiltered():
     data = db.session.execute(sqlalchemy.text(stmt), params)
     response = [[c for c in data.keys()]]
     response.extend([[i for i in row] for row in data])
-    return {"data":response}
+    return {"data": response}
+
 
 @app.get('/gene_filtered')
 def gene_filtered():
@@ -102,7 +103,6 @@ def gene_filtered():
       timepoint = :timepoint
     order by
       timepoint
-    limit 10000;
     """
     data = db.session.execute(sqlalchemy.text(stmt), params)
     response = [[c for c in data.keys()]]
@@ -110,7 +110,7 @@ def gene_filtered():
     t2 = timer()
     total_time = t2-t1
     print(total_time)
-    return {"data":response}
+    return {"data": response}
 
 
 @app.get('/cell')
@@ -118,6 +118,7 @@ def get_cell():
     t1 = timer()
     params = request.args.to_dict()
 
+    # TODO: sanatize inputs and dynamically accept filters
     stmt = f"""
     select
       cell."UMAP_3d_1" as x,
@@ -142,21 +143,24 @@ def get_cell():
     print(total_time)
     return {"data": response}
 
+
 @app.get('/filter_option')
 def filter_options():
     params = request.args.to_dict()
     if params['option'] not in [column.key for column in cell.__table__.columns]:
         return {"error": "option does not exist"}, 404
-    
+
+    # TODO: sanatize params['option']
     stmt = f"""
     select {params['option']} from cell group by {params['option']}
     """
     data = db.session.execute(sqlalchemy.text(stmt), params)
     response = [x[0] for x in data]
-    return {"options":response}
+    return {"options": response}
 
 
 @app.get('/annotation_options')
 def annotation_options():
-    response = [column.key for column in cell.__table__.columns if column.key not in ['id', 'UMAP_3d_1', 'UMAP_3d_2', 'UMAP_3d_3']]
-    return {"options":response}
+    response = [column.key for column in cell.__table__.columns if column.key not in [
+        'id', 'UMAP_3d_1', 'UMAP_3d_2', 'UMAP_3d_3']]
+    return {"options": response}
